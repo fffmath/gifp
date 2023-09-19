@@ -1,2 +1,95 @@
-# gifp
-Code for the paper “Generalized Implicit Factorization Problem”，which is accepted by SAC2023.
+# Boneh-Durfee Attack
+
+## Introduction
+This is a Python implementation of Boneh-Durfee attack[^BD] on RSA. It is based on [Joachim Vandersmissen's crypto-attacks](https://github.com/jvdsn/crypto-attacks) and I make several improvements.
+
+## Requirements
+* [SageMath](https://www.sagemath.org/) with Python 3.9
+* [PyCryptodome](https://pycryptodome.readthedocs.io/)
+
+You can check your SageMath Python version using the following command:
+```
+$ sage -python --version
+Python 3.9.0
+```
+Note: If your SageMath Python version is older than 3.9.0, some features in some scripts might not work.
+
+## Usage
+To run this attack, you can simply execute the Python file **attack.py** with Sage using `sage -python attack.py` and then input several specific attack parameters:
+```commandline
+Boneh_Durfee_Attack$ sage -python attack.py
+Input prime bit-length: 128
+Input delta: 0.266
+Input attack times: 5
+Input m: 5
+INFO:root:Test for delta=0.266 with 5 times:
+INFO:root:Generating RSA instance with 256-bit modulus and 69-bit private key d...
+INFO:root:Trying m = 5, t = 2...
+INFO:root:Failed!
+INFO:root:Test 1 costs 5.502517 seconds
+INFO:root:Generating RSA instance with 256-bit modulus and 69-bit private key d...
+INFO:root:Trying m = 5, t = 2...
+INFO:root:Succeeded!
+INFO:root:Found p = 280289040924252858969937221371106912643
+INFO:root:Found q = 308538008689784114925137574181258730927
+INFO:root:Test 2 costs 0.248769 seconds
+INFO:root:Generating RSA instance with 256-bit modulus and 69-bit private key d...
+INFO:root:Trying m = 5, t = 2...
+INFO:root:Failed!
+INFO:root:Test 3 costs 5.736360 seconds
+INFO:root:Generating RSA instance with 256-bit modulus and 69-bit private key d...
+INFO:root:Trying m = 5, t = 2...
+INFO:root:Failed!
+INFO:root:Test 4 costs 5.598221 seconds
+INFO:root:Generating RSA instance with 256-bit modulus and 69-bit private key d...
+INFO:root:Trying m = 5, t = 2...
+INFO:root:Succeeded!
+INFO:root:Found p = 300194396566568635876010132028924633371
+INFO:root:Found q = 325358021261498496102928905737189898419
+INFO:root:Test 5 costs 1.062334 seconds
+INFO:root:The success rate for delta=0.266 using m=5 is 40.0% and average time is 0.655552 seconds
+```
+```commandline
+Boneh_Durfee_Attack$ sage -python attack.py
+Input prime bit-length: 1024
+Input delta: 0.25
+Input attack times: 5
+Input m: 4
+INFO:root:Test for delta=0.25 with 5 times:
+INFO:root:Generating RSA instance with 2048-bit modulus and 512-bit private key d...
+INFO:root:Trying m = 4, t = 2...
+INFO:root:Succeeded!
+INFO:root:Found p = 130913290915225299785196508062118266448767166848446425990513006806591119665826219420273995011990342438637827389546140260280231447474185178681252596773081445895093366931891845044430268396843799306805746126269499168384642252517630196706988114106323286353495985780569140014553117098782406095521295552214662543483
+INFO:root:Found q = 143839658092020573583224088719339082800757921928063861652017646695049176696778894146335900939137444526512310991505719395899105315110465888115031600326801229653435063356686846587451172291596743835459253029634791746337042289433940947354866516814347973966252430723565302303952730213167852618815155537067039960051
+INFO:root:Test 1 costs 13.719020 seconds
+INFO:root:Generating RSA instance with 2048-bit modulus and 512-bit private key d...
+INFO:root:Trying m = 4, t = 2...
+INFO:root:Succeeded!
+INFO:root:Found p = 100938194777382679327329220275892488701477283266601864862052925326516661528363915482266885137313989564349206292922760393706976395974237270710823082531508803815190616369405618261474752447423424515937532126452543606588132220431222890054388661548638559359654416905860946752784618012858042029573320303833142105523
+INFO:root:Found q = 139700182328229142607455189538782941384653547454917626560154109676364626852843134456242557203324784196084691904122527002681532816379328990108638366548526756024628023694352718214004443276128261370116288391558538695628694973557892948259448424009532153983088495275997812882700457191880880363517442374241935709431
+INFO:root:Test 2 costs 11.722455 seconds
+INFO:root:Generating RSA instance with 2048-bit modulus and 512-bit private key d...
+INFO:root:Trying m = 4, t = 2...
+INFO:root:Succeeded!
+INFO:root:Found p = 91003163771205518403726879426458667901036381331165409129410023980377281086474470623579622127096063989576259845824365919504025786877047286994886870247350461540798497453173879266419121647124697421258830236206642543302967443949983691695491455997266978943005582047200304495261973256901132449665223263998549281319
+INFO:root:Found q = 101553467649979051368194265095469735709771674925844247927961830763363234833846168209590132187371117636501356410429152436104961524837019030497922863260242013582943392072599311663171071824177480297038508372667974371151546842881761150018541376268666414756430017441026337970700674993482992211823270709939999427891
+INFO:root:Test 3 costs 6.978895 seconds
+INFO:root:Generating RSA instance with 2048-bit modulus and 512-bit private key d...
+INFO:root:Trying m = 4, t = 2...
+INFO:root:Succeeded!
+INFO:root:Found p = 140090623875926654380282305693589683841484480138254880545320914303334975060194465352207498856725575666352333046223155531304943623690260216780864603326536589475465670852240418117545046342297823475674414716350115968580626597352902687089362664566636824541578536892231500427143289918547759363932785001642277128443
+INFO:root:Found q = 154221219587351946925580648585151672632941314040601129087944620374429069115664708820057883899092781855263337809746487764557820509900773291629490961859843836943369469249683376946326443150393467436800195083811741857713927407352727359975812964039188647097011140614307529091979409652595246855156740349959571899047
+INFO:root:Test 4 costs 6.923637 seconds
+INFO:root:Generating RSA instance with 2048-bit modulus and 512-bit private key d...
+INFO:root:Trying m = 4, t = 2...
+INFO:root:Succeeded!
+INFO:root:Found p = 140070945939013981220980741246033433761820800459128208958615529241693637024746073258379256609074126792867057709282391642784345141541062901140741869302127464603069559444722868418382057825305621008096880379572784626921000700773892774853572713394450086242865276321921379218578399179292020824646228227930264267851
+INFO:root:Found q = 153089801261898468440775769379074330073780718320585729362282687877430832044364142865436213492791025988852053373082999518645642539469629810423004614742207392945646195954038322636883321361650780947165171183335694552300372663109783844308034173972413056122495181362601837731106350504003325784959358425128651187547
+INFO:root:Test 5 costs 8.887570 seconds
+INFO:root:The success rate for delta=0.25 using m=4 is 100.0% and average time is 9.646315 seconds
+```
+
+## Notes
+The parameters `m` and `t` as shown in the output log deserve special attention. These parameters are used in many lattice-based (small roots) algorithms to tune the lattice size. Conceptually, `m` and `t` represent the number of "shifts" used in the lattice, which is roughly equal or proportional to the number of rows. Therefore, increasing `m` and `t` will increase the size of the lattice, which also increases the time required to perform lattice reduction (currently using LLL). On the other hand, if `m` and `t` are too low, it is possible that the lattice reduction will not result in appropriate vectors, therefore wasting the time spent reducing. Hence, this is a trade-off. In the current version of the attack, `t` can, in some cases, be computed based on the specific small roots method used by the attack. 
+
+[^BD]: Boneh D., Durfee G., "Cryptanalysis of RSA with Private Key d Less than N^0.292" | [HTML](https://ieeexplore.ieee.org/abstract/document/850673) [PDF](https://mengcezheng.github.io/assets/files/Boneh_Durfee_Cryptanalysis.pdf)
