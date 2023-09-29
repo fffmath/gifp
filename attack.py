@@ -1,7 +1,7 @@
 import logging
 import timeit
 
-from math import ceil
+from math import ceil, sqrt
 from sage.all import Integer
 from sage.all import inverse_mod
 from sage.crypto.util import random_blum_prime
@@ -11,7 +11,7 @@ from sage.all import Integer
 
 import small_roots
 
-def modular_bivariate(f, e, m, t, X, Y, roots_method="groebner"):
+def modular_bivariate(f, N1, N2, m, s, t, X, Y, Z, W, beta1_bit_length, beta2_bit_length, roots_method="groebner"):
     """
     Computes small modular roots of a bivariate polynomial.
     More information: Herrmann M., May A., "Maximizing Small Root Bounds by Linearization and Applications to Small Secret Exponent RSA"
@@ -26,27 +26,20 @@ def modular_bivariate(f, e, m, t, X, Y, roots_method="groebner"):
     """
     f = f.change_ring(ZZ)
 
-    pr = ZZ["x", "y", "u"]
-    x, y, u = pr.gens()
-    qr = pr.quotient(1 + x * y - u)
-    U = X * Y
+    pr = ZZ["x", "y", "z", "w"]
+    x, y, z, w = pr.gens()
+    qr = pr.quotient(N2 - z * w)
 
     logging.debug("Generating shifts...")
 
     shifts = []
-    for k in range(m + 1):
-        for i in range(m - k + 1):
-            g = x ** i * f ** k * e ** (m - k)
+    for i in range(m + 1):
+        for j in range(m - i + 1):
+            g = (y*z) ** j * f ** i * 2 ** (int(beta2_bit_length-beta1_bit_length)*(m-i)) * N1 ** max(t-i, 0)
             g = qr(g).lift()
             shifts.append(g)
 
-    for j in range(1, t + 1):
-        for k in range(m // t * j, m + 1):
-            h = y ** j * f ** k * e ** (m - k)
-            h = qr(h).lift()
-            shifts.append(h)
-
-    L, monomials = small_roots.create_lattice(pr, shifts, [X, Y, U])
+    L, monomials = small_roots.create_lattice(pr, shifts, [X, Y, Z, W])
     L = small_roots.reduce_lattice(L)
 
     pr = f.parent()
@@ -56,39 +49,41 @@ def modular_bivariate(f, e, m, t, X, Y, roots_method="groebner"):
     for roots in small_roots.find_roots(pr, polynomials, method=roots_method):
         yield roots[x], roots[y]
 
-def attack(N, e, factor_bit_length, delta=0.25, m=1, t=None):
+def attack(modulus_bit_length, N1, N2, alpha=0.25, gamma=0.75, m=1, s=None, t=None):
     """
     Recovers the prime factors if the private exponent is too small.
     This implementation exploits knowledge of least significant bits of prime factors, if available.
     More information: Boneh D., Durfee G., "Cryptanalysis of RSA with Private Key d Less than N^0.292"
-    :param N: the modulus
-    :param e: the public exponent
-    :param factor_bit_length: the bit length of the prime factors
-    :param delta: a predicted bound on the private exponent (d < N^delta) (default: 0.25)
+    :param N1 and param N2: the modulus
+    :param alpha: the prime number are bounded by N^alpha (default: 0.25)  
+    :param gamma: a predicted bound on the shared bits (default: 0.75) 
     :param m: the m value to use for the small roots method (default: 1)
     :param t: the t value to use for the small roots method (default: automatically computed using m)
     :return: a tuple containing the prime factors
     """
-    A = N + 1
-    x, y = ZZ["x", "y"].gens()
-    f = x * (A + y) + 1
-    X = Integer(RR(e) ** delta)
-    Y = Integer(2 ** int(factor_bit_length + 1))
-    t = int((1 - 2 * delta) * m) if t is None else t
-    logging.info(f"Trying m = {m}, t = {t}...")
-    for x0, y0 in modular_bivariate(f, e, m, t, X, Y):
-        z = int(f(x0, y0))
-        if z % e == 0:
-            k = pow(x0, -1, e)
-            s = (N + 1 + k) % e
-            phi = N - s + 1
-            factors = small_roots.factorize(N, phi)
-            if factors:
-                return factors
+    for beta1_bit_length in range(ceil(modulus_bit_length * (1-alpha-gamma))):
+        for beta2_bit_length in range(beta1_bit_length, ceil(modulus_bit_length * (1-alpha-gamma))): # Suppose beta2>beta1, otherwise, we exchange the values of N1 and N2.
+            x, y, z = ZZ["x", "y", "z"].gens()
+            f = x*z+2**(ceil(modulus_bit_length * (gamma))+beta2_bit_length)*y*z+N2
+            X = Integer(2 ** int(beta2_bit_length))
+            Y = Integer(2 ** int(modulus_bit_length*(1-alpha-gamma)-beta1_bit_length))
+            Z = Integer(2 ** int(modulus_bit_length*(alpha)))
+            W = Integer(2 ** int(modulus_bit_length*(1-alpha)))
+            s = int(sqrt(alpha) * m) if s is None else s
+            t = int((1 - sqrt(alpha)) * m) if t is None else t
+            logging.info(f"Trying m = {m}, s = {s}, t = {t}...")
+            for x0, y0, z0 in modular_bivariate(f, N1, N2, m, s, t, X, Y, Z, W, beta1_bit_length, beta2_bit_length):
+                result = int(f(x0, y0, z0))
+                if result == 0:
+                    q2=z0
+                    p2=N2/z0
+                    p1=(p2+y0+z0*2**(beta2_bit_length+ceil(modulus_bit_length * gamma)))/(2**(beta2_bit_length-beta1_bit_length))
+                    q1=N1/p1
+                    return p1, q1, p2, q2
 
-    return None, None
+    return None, None, None, None
 
-def generate_RSA_instance(modulus_bit_length, delta=0.25):
+def generate_RSA_instance(modulus_bit_length, alpha=0.25, gamma=0.75):
     """
     Generate an RSA instance with given bit-lengths of the modulus and private key d
     :param modulus_bit_length: the bit length of the modulus
@@ -97,21 +92,22 @@ def generate_RSA_instance(modulus_bit_length, delta=0.25):
     """
     # if modulus_bit_length < 1024:
     #     raise ValueError("RSA modulus length must be >= 1024")
-    e = d = N = Integer(1)
-    d_bit_length = ceil(modulus_bit_length * delta)
-    logging.info(f"Generating RSA instance with {modulus_bit_length}-bit modulus and {d_bit_length}-bit private key d...")
-    while N.nbits() != modulus_bit_length and d.nbits() != d_bit_length:
-        prime_bit_length = modulus_bit_length // 2
-        p = random_blum_prime(2**(prime_bit_length - 1), 2**prime_bit_length - 1)
-        q = random_blum_prime(2**(prime_bit_length - 1), 2**prime_bit_length - 1)
-        N = p * q
-        phi = (p - 1) * (q - 1)
-        d = random_blum_prime(2**(d_bit_length - 1), 2**d_bit_length - 1)
-        e = inverse_mod(d, phi)
+    shared_bit = N1 = N2 = Integer(1)
+    q_bit_length=ceil(modulus_bit_length * alpha)
+    p_bit_length=modulus_bit_length - q_bit_length
+    shared_bit_length = ceil(modulus_bit_length * gamma)
+    logging.info(f"Generating RSA instance with {modulus_bit_length}-bit modulus and {shared_bit_length}-bit implicit shared bits for p...")
+    while N1.nbits() != modulus_bit_length and N2.nbits() != modulus_bit_length and shared_bit.nbits() != shared_bit_length:
+        p1 = random_blum_prime(2**(p_bit_length - 1), 2**p_bit_length - 1)
+        q1 = random_blum_prime(2**(q_bit_length - 1), 2**q_bit_length - 1)
+        p2 = random_blum_prime(2**(p_bit_length - 1), 2**p_bit_length - 1)
+        q2 = random_blum_prime(2**(q_bit_length - 1), 2**q_bit_length - 1)
+        N1 = p1 * q1
+        N2 = p2 * q2
 
-    return N, e
+    return N1, N2
 
-def attack_RSA_instance(modulus_bit_length, delta=0.25, m=3):
+def attack_RSA_instance(modulus_bit_length, alpha, gamma, m=3):
     """
     Attack an RSA instance with given bit-lengths of the modulus and private key d
     :param modulus_bit_length: the bit length of the modulus
@@ -119,13 +115,15 @@ def attack_RSA_instance(modulus_bit_length, delta=0.25, m=3):
     :param m: a given parameter for controlling the lattice dimension (default: 3)
     :return: 1 if attack succeeds else 0
     """
-    N, e  = generate_RSA_instance(modulus_bit_length, delta)
-    p_bits = modulus_bit_length / 2
-    p, q = attack(N, e, p_bits, delta, m)
-    if p is not None and q is not None and p * q == N:
+    N1, N2  = generate_RSA_instance(modulus_bit_length, alpha, gamma)
+    p_bits = modulus_bit_length - ceil(modulus_bit_length * alpha)
+    p1, q1, p2, q2 = attack(modulus_bit_length, N1, N2, alpha, gamma, m)
+    if p1 is not None and q1 is not None and p1 * q1 == N1 and p2 is not None and q2 is not None and p2 * q2 == N2:
         logging.info(f"Succeeded!")
-        logging.info(f"Found p = {p}")
-        logging.info(f"Found q = {q}")
+        logging.info(f"Found p1 = {p1}")
+        logging.info(f"Found q1 = {q1}")
+        logging.info(f"Found p2 = {p2}")
+        logging.info(f"Found q2 = {q2}")
         return 1
     else:
         logging.info(f"Failed!")
@@ -143,9 +141,9 @@ m = int(input("Input m: "))
 modulus_bit_length = p_bits * 2
 '''
 
-p_bits = 512
-modulus_bit_length = p_bits * 2
-delta = 0.25
+modulus_bit_length = 1024
+alpha = 0.25
+gamma = 0.75
 test_times = 5
 m = 5
 
