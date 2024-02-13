@@ -19,12 +19,20 @@ Python 3.11.1
 Note: If your SageMath Python version is older than 3.11.1, some features in some scripts might not work.
 ## Usage
 ```bash
-sage gifp.sage <modulus_bit_length> <alpha> <gamma> <beta1> <beta2> <m>
-```
-For example:
-```bash
+# sage gifp.sage <modulus_bit_length> <alpha> <gamma> <beta1> <beta2> <m>
 sage gifp.sage 200 0.1 0.7 0.1 0.15 4
 ```
+## Usage
+
+Usage: sage gifp.sage `<modulus_bit_length>` `<alpha>` `<gamma>` `<beta1>` `<beta2>` `<m>`
+
+For example
+
+```bash
+# Run experiments with modulus_bit_length set to 200.
+sage gifp.sage 200 0.1 0.7 0.1 0.15 4
+```
+
 If the roots are successfully found, it returns 1; otherwise, it returns 0. The corresponding time for computing LLL and computing Grobner basis can be found in the `gifp.log` file.
 
 ### Debug
