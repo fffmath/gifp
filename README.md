@@ -36,7 +36,7 @@ It is important to note that our paper introduces a new variable, 'w', to elimin
 
 And here's an example to illustrate the analysis above.
 
-#### Example
+#### Example without new variable 'w'
 Run the `example.sage`:
 ```bash
 N1: 814072953237453703269626775081889594665601447233336309048661
@@ -54,6 +54,8 @@ By calculating the third equation, we find that it is actually $(yz - 5127973899
 Next, compute $z_0=q_2=\gcd(y_0z_0, N_2)=\gcd(512797389907, 1053039258722741964842067475826840037602528093495734686029849)= 809747$, hence $p_2=1300454658952415958122805611909448306202465823887874467$ and $y_0=512797389907/809747=633281$.
 
 Finally, we can compute from the first equation that $(x+52202915y/633281)^2=0$, thus $x_0=-52202915$.
+
+#### Example with new variable 'w'
 
 In fact, we can use this idea to solve the equations in GIFP with the addtional variable 'w'. We need to add $z*w-N_2$ to the polynomials set, which is used to compute grobner basis. The results are as follow:
 ```bash
