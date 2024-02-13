@@ -12,10 +12,10 @@ This is a Python implementation of GIFP based on [Joachim Vandersmissen's crypto
 
   You can check your SageMath Python version using the following command:
 
-  ```bash
-  $ sage -python --version
-  Python 3.11.1
-  ```
+```bash
+$ sage -python --version
+Python 3.11.1
+```
 Note: If your SageMath Python version is older than 3.11.1, some features in some scripts might not work.
 ## Usage
 ```bash
