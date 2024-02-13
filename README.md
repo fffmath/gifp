@@ -29,7 +29,7 @@ If the roots are successfully found, it returns 1; otherwise, it returns 0. The 
 
 ### Debug
 
-You can enable debugging by setting `logging.basicConfig(filename='identifying_ideal_lattice.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')` in your code.
+You can enable debugging by setting `logging.basicConfig(filename='gifp.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')` in your code.
 
 ### Precautions
 It is important to note that our paper introduces a new variable, 'w', to eliminate some 'z'. Introducing multiple variables may intuitively make it more challenging to satisfy the Grobner basis Heuristic. However, in practice, it is not necessary to satisfy the Grobner basis Heuristic to find the desired 'p' and 'q'. At the same time, if we abandon the introduction of 'w', the corresponding bound changes from $\gamma>4a(1-\sqrt{\alpha})$ to $\gamma>2a(2-\sqrt{\alpha})$. Even with only three variables in this case, we can still find 'p' and 'q' without satisfying the Grobner basis Heuristic.
