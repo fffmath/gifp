@@ -193,9 +193,11 @@ def find_roots_groebner(N1, N2,pr,desired_solution, unknown_modular, polynomials
     """
     gens = pr.gens()
     x, y, z, w = pr.gens()
+    #w, z, y, x = pr.gens()
     #qr = pr.change_ring(QQ).quotient(z*w - N2)
     #tmp=[qr(g).lift() for g in polynomials]
     #polynomials=list(set(tmp))
+    polynomials.insert(0, z*w-N2)
     s = Sequence(polynomials, pr.change_ring(QQ,order='lex'))
     for ii in range(len(s)):
         logging.debug(f"Polynomials in Sequence: {s[ii]}")
