@@ -13,7 +13,6 @@ def generate_gifp_instance(modulus_bit_length, alpha, gamma, beta1, beta2, seed=
     :param beta1: The ratio of the bit length of the smaller prime in the first RSA instance to the modulus bit length.
     :param beta2: The ratio of the bit length of the smaller prime in the second RSA instance to the modulus bit length.
     :param seed: The seed for the random number generator. If not provided, the current time's microsecond is used.
-    :param delta: The probability of failure in generating RSA instances.
     :param max_attempts: The maximum number of attempts to generate RSA instances.
     :return: A list of the first RSA instance's primes, a list of the second RSA instance's primes, the shared bit, and the seed.
     """
@@ -132,8 +131,6 @@ def reconstruct_polynomials(B, f, modulus, monomials, bounds):
     :param modulus: the original modulus
     :param monomials: the monomials
     :param bounds: the bounds
-    :param preprocess_polynomial: a function which preprocesses a polynomial before it is added to the list (default: identity function)
-    :param divide_gcd: if set to True, polynomials will be pairwise divided by their gcd if possible (default: True)
     :return: a list of polynomials
     """
     logging.debug(f"Reconstructing polynomials (divide_original = {f is not None}, modulus_bound = {modulus is not None})...")
@@ -187,8 +184,13 @@ def find_roots_groebner(N1, N2,pr,desired_solution, unknown_modular, polynomials
     """
     Returns a generator generating all roots of a polynomial in some unknowns.
     Uses Groebner bases to find the roots.
+    :param N1: the modulus of the first RSA instance
+    :param N2: the modulus of the second RSA instance
     :param pr: the polynomial ring
+    :param desired_solution: the desired root (x0, y0, z0, w0), just used for debug
+    :param unknown_modular: unknown modular M^m*N1^t, just used for debug
     :param polynomials: the reconstructed polynomials
+    :param bounds: the bounds
     :return: a generator generating dicts of (x0: x0root, x1: x1root, ...) entries
     """
     gens = pr.gens()
@@ -242,8 +244,10 @@ def eliminate_N2(f, modular):
 
 def modular_gifp(desired_solution, unknown_modular, f, M, N1, N2, m, s, t, X, Y, Z, W):
     """
-    Computes small modular roots of a bivariate polynomial.
-    More information: Herrmann M., May A., "Maximizing Small Root Bounds by Linearization and Applications to Small Secret Exponent RSA"
+    Computes Generalized Implicit Factorization Problem.
+    More information: Feng, Yansong and Nitaj, Abderrahmane and Pan, Yanbin, "Generalized Implicit Factorization Problem"
+    :param desired_solution: the desired root (x0, y0, z0, w0), just used for debug
+    :param unknown_modular: unknown modular M^m*N1^t, just used for debug
     :param f: the polynomial
     :param M: 2^(|\beta1-\beta2|*n)
     :param N1: the modulus of the first RSA instance
@@ -255,7 +259,7 @@ def modular_gifp(desired_solution, unknown_modular, f, M, N1, N2, m, s, t, X, Y,
     :param Y: the bound for y
     :param Z: the bound for z
     :param W: the bound for w
-    :return: a generator generating small roots (tuples of x and y roots) of the polynomial
+    :return: a generator generating small roots of the polynomial
     """
     f = f.change_ring(ZZ)
 
@@ -301,12 +305,15 @@ def modular_gifp(desired_solution, unknown_modular, f, M, N1, N2, m, s, t, X, Y,
     for roots in find_roots_groebner(N1, N2,pr,desired_solution, unknown_modular, polynomials,[X, Y, Z, W]):
         yield roots[x], roots[y], roots[z], roots[w]
 
-def attack_gifp_instance(modulus_bit_length, alpha, gamma, beta1, beta2, m=1,seed=None, s=None, t=None):
+def attack_gifp_instance(modulus_bit_length, alpha, gamma, beta1, beta2, m=3,seed=None, s=None, t=None):
     """
-    Attack an RSA instance with given bit-lengths of the modulus and private key d
+    Attack an GIFP instance with parameters
     :param modulus_bit_length: the bit length of the modulus
-    :param delta: a given size on the private exponent (d is roughly N^delta) (default: 0.25)
+    :param alpha, gamma, beta1, beta2: parameters for the GIFP instance
     :param m: a given parameter for controlling the lattice dimension (default: 3)
+    :param seed: The seed for the random number generator. If not provided, the current time's microsecond is used.
+    :param s: a parameter
+    :param t: a parameter
     :return: 1 if attack succeeds else 0
     """
     if beta2<beta1:
